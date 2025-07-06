@@ -91,34 +91,31 @@ async def generate_mock_ai_response(prompt: str, system_prompt: str = "You are a
     if "job posting" in prompt.lower() and "summarize" in prompt.lower():
         return """
 
+\n\n
+🔧 Skills & Technical Expertise:\n\n
+- Technical program management (Agile, Scrum, Kanban)\n\n
+- Software development lifecycle & modern architecture principles\n\n
+- Data-driven program governance and KPI tracking\n\n
+- Change management and process optimization\n\n
+- Strong stakeholder engagement and cross-functional communication\n\n
+- Budget/resource management across engineering initiatives\n\n
+
+\n\n
+🎯 Responsibilities:\n\n
+- Drive technical strategy and execution across multi-team engineering initiatives\n\n
+- Develop and maintain technical roadmaps\n\n
+- Resolve technical dependencies and risks\n\n
+- Lead end-to-end program management\n\n
+- Implement scalable governance frameworks and metrics\n\n
+- Collaborate across engineering, product, and business functions\n\n
+- Lead high-priority strategic programs and change management\n\n
 
 
-🔧 Skills & Technical Expertise\n\n
-Technical program management (Agile, Scrum, Kanban)\n\n
-Software development lifecycle & modern architecture principles\n\n
-Data-driven program governance and KPI tracking\n\n
-Change management and process optimization\n\n
-Strong stakeholder engagement and cross-functional communication\n\n
-Budget/resource management across engineering initiatives\n\n
-
-
-
-🎯 Responsibilities\n\n
-Drive technical strategy and execution across multi-team engineering initiatives\n\n
-Develop and maintain technical roadmaps\n\n
-Resolve technical dependencies and risks\n\n
-Lead end-to-end program management\n\n
-Implement scalable governance frameworks and metrics\n\n
-Collaborate across engineering, product, and business functions\n\n
-Lead high-priority strategic programs and change management\n\n
-
-
-
-🎓 Qualifications\n\n
-10+ years in technical program management roles\n\n
-Bachelor's in Engineering, Computer Science, or related\n\n
-PMP certification preferred\n\n
-Strong leadership, organizational and communication skills\n\n"""
+🎓 Qualifications:\n\n
+- 10+ years in technical program management roles\n\n
+- Bachelor's in Engineering, Computer Science, or related\n\n
+- PMP certification preferred\n\n
+- Strong leadership, organizational and communication skills\n\n"""
     
     elif "comparison table" in prompt.lower():
         return """
