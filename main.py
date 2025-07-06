@@ -151,7 +151,7 @@ multiple successful projects. Excellent problem-solving skills and team collabor
     elif "cover letter" in prompt.lower():
         return """Dear Hiring Manager,
 
-I am excited to apply for the Software Developer position. With 4+ years of experience 
+I am excited to apply for the Software Developer position. With 14+ years of experience 
 in full-stack development using Python, JavaScript, and React, I believe I am an 
 excellent fit for your team.
 
@@ -277,7 +277,7 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
             "Provide a brief resume summary to ensure the user experiences are better matched with the job requirements. Keep the overall summary within 1700 characters."
         )
         tailored_resume_summary = await call_ai_api(tailored_resume_summary_prompt)
-        tailored_resume_summary = f"Tailored Resume Summary:\n{tailored_resume_summary}"
+        tailored_resume_summary = f"\n{tailored_resume_summary}"
 
         # e. Tailored Work Experience
         tailored_work_experience_prompt = (
@@ -290,7 +290,7 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
         tailored_work_experience_text = await call_ai_api(tailored_work_experience_prompt)
         tailored_work_experience = [line.strip() for line in tailored_work_experience_text.split("\n") if line.strip().startswith("-")]
         tailored_work_experience = tailored_work_experience[:7]
-        tailored_work_experience = [f"Tailored Resume Work Experience:\n{item}" for item in tailored_work_experience]
+        tailored_work_experience = [f"\n{item}" for item in tailored_work_experience]
 
         # f. Cover Letter
         cover_letter_prompt = (
@@ -301,7 +301,7 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
             "Provide a formal cover letter for applying to the job. The cover letter should highlight the user's best fit skills and experiences according to the job posting, show the user's strengths and passions for the position, and express appreciation for a future interview opportunity."
         )
         cover_letter = await call_ai_api(cover_letter_prompt)
-        cover_letter = f"Cover Letter:\n{cover_letter}"
+        cover_letter = f"\n{cover_letter}"
 
         return {
             "job_summary": job_summary,
