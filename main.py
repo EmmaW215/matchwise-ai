@@ -90,48 +90,54 @@ async def generate_mock_ai_response(prompt: str, system_prompt: str = "You are a
     # 根据提示类型生成相应的模拟响应
     if "job posting" in prompt.lower() and "summarize" in prompt.lower():
         return """
-\n
-🔧 Skills & Technical Expertise\n
-Technical program management (Agile, Scrum, Kanban)\n
-Software development lifecycle & modern architecture principles\n
-Data-driven program governance and KPI tracking\n
-Change management and process optimization\n
-Strong stakeholder engagement and cross-functional communication\n
-Budget/resource management across engineering initiatives\n
-\n
-🎯 Responsibilities\n
-Drive technical strategy and execution across multi-team engineering initiatives\n
-Develop and maintain technical roadmaps\n
-Resolve technical dependencies and risks\n
-Lead end-to-end program management\n
-Implement scalable governance frameworks and metrics\n
-Collaborate across engineering, product, and business functions\n
-Lead high-priority strategic programs and change management\n
-\n
-🎓 Qualifications\n
-10+ years in technical program management roles\n
-Bachelor's in Engineering, Computer Science, or related\n
-PMP certification preferred\n
-Strong leadership, organizational and communication skills\n"""
+
+
+
+🔧 Skills & Technical Expertise\n\n
+Technical program management (Agile, Scrum, Kanban)\n\n
+Software development lifecycle & modern architecture principles\n\n
+Data-driven program governance and KPI tracking\n\n
+Change management and process optimization\n\n
+Strong stakeholder engagement and cross-functional communication\n\n
+Budget/resource management across engineering initiatives\n\n
+
+
+
+🎯 Responsibilities\n\n
+Drive technical strategy and execution across multi-team engineering initiatives\n\n
+Develop and maintain technical roadmaps\n\n
+Resolve technical dependencies and risks\n\n
+Lead end-to-end program management\n\n
+Implement scalable governance frameworks and metrics\n\n
+Collaborate across engineering, product, and business functions\n\n
+Lead high-priority strategic programs and change management\n\n
+
+
+
+🎓 Qualifications\n\n
+10+ years in technical program management roles\n\n
+Bachelor's in Engineering, Computer Science, or related\n\n
+PMP certification preferred\n\n
+Strong leadership, organizational and communication skills\n\n"""
     
     elif "comparison table" in prompt.lower():
         return """
-\n
-| Category | Match Type | Score |
-|----------|------------|-------|
-| Years of Experience | ✅ Strong | 1.0 |
-| Technical Program Mgmt | ✅ Strong | 1.0 |
-| Agile/Scrum/Kanban | ✅ Strong | 1.0 |
-| Software Architecture | ⚠️ Partial | 0.5 |
-| Budget & Resource Mgmt | ⚠️ Partial | 0.5 |
-| Stakeholder Engagement | ✅ Strong | 1.0 |
-| Change Management | ✅ Moderate-Strong | 0.75 |
-| GCP/Cloud & Tech Stack | ✅ Strong | 1.0 |
-| Governance & KPI Tracking | ✅ Strong | 1.0 |
-| PMP Certification | ⚠️ Partial (in progress) | 0.5 |
-| Industry Knowledge (Health) | ❌ Lack | 0.0 |
-
-**Total: 8.25 / 10**\n"""
+\n\n
+| Category | Match Type | Score |\n\n
+|----------|------------|-------|\n\n
+| Years of Experience | ✅ Strong | 1.0 |\n\n
+| Technical Program Mgmt | ✅ Strong | 1.0 |\n\n
+| Agile/Scrum/Kanban | ✅ Strong | 1.0 |\n\n
+| Software Architecture | ⚠️ Partial | 0.5 |\n\n
+| Budget & Resource Mgmt | ⚠️ Partial | 0.5 |\n\n
+| Stakeholder Engagement | ✅ Strong | 1.0 |\n\n
+| Change Management | ✅ Moderate-Strong | 0.75 |\n\n
+| GCP/Cloud & Tech Stack | ✅ Strong | 1.0 |\n\n
+| Governance & KPI Tracking | ✅ Strong | 1.0 |\n\n
+| PMP Certification | ⚠️ Partial (in progress) | 0.5 |\n\n
+| Industry Knowledge (Health) | ❌ Lack | 0.0 |\n\n
+\n\n
+**Total: 8.25 / 10**\n\n"""
     
     elif "percentage score" in prompt.lower():
         return "88"
@@ -233,7 +239,7 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
             "Summarize the key job requirements from the job descriptions, providing a brief job requirement summary including: Skills & Technical Requirements, Responsibilities, and Qualifications."
         )
         job_summary = await call_ai_api(job_summary_prompt)
-        job_summary = f"Key Requirements from this Job Posting:\n{job_summary}"
+        job_summary = f"Key Requirements from this Job Posting:\n\n{job_summary}"
 
         # b. Resume Summary with Comparison Table
         resume_summary_prompt = (
@@ -244,7 +250,7 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
             "Highlight the user's key skills and experiences, then provide a comparison table based on the resume and job summary. List the key requirements and skills as column Categories, Match status (Strong/Moderate-strong/Partial/Lack), and Comments (very precise comment on how the user experiences matches with the job requirement)."
         )
         resume_summary = await call_ai_api(resume_summary_prompt)
-        resume_summary = f"Resume - Job Posting Comparison:\n\n{resume_summary}"
+        resume_summary = f"\n\n{resume_summary}"
 
         # c. Match Score
         match_score_prompt = (
