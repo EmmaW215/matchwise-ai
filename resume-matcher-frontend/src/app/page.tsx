@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import React, { useState, useRef } from 'react';
-import SimpleVisitorCounter from './components/SimpleVisitorCounter';
+import React, { useEffect, useState, useRef } from "react";
+import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
+import VisitorCounter from './components/VisitorCounter';
+// import SimpleVisitorCounter from './components/SimpleVisitorCounter'; // 注释掉
+import { loadStripe } from '@stripe/stripe-js';
 
 interface ComparisonResponse {
   job_summary: string;
@@ -14,6 +18,15 @@ interface ComparisonResponse {
   cover_letter: string;
 }
 
+interface UserStatus {
+  trialUsed: boolean;
+  isUpgraded: boolean;
+  planType: string | null;
+  scanLimit: number | null;
+  scansUsed: number;
+  lastScanMonth: string;
+}
+
 export default function Home() {
   const [jobText, setJobText] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -21,8 +34,158 @@ export default function Home() {
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ComparisonResponse | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [userStatusLoading, setUserStatusLoading] = useState(false);
+  
+  // 用户状态
+  const [user, setUser] = useState<User | null>(null);
+  const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
+  
+  // 匿名用户试用状态（仅用于未登录用户）
+  const [anonymousTrialUsed, setAnonymousTrialUsed] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 初始化时检查匿名用户试用状态
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const trialUsed = localStorage.getItem('anonymousTrialUsed') === 'true';
+      setAnonymousTrialUsed(trialUsed);
+    }
+  }, []);
+
+  // 监听用户登录状态
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 页面加载或用户变化时清除错误状态
+  useEffect(() => {
+    setError('');
+    setShowUpgradeModal(false);
+  }, [user]);
+
+  // 获取用户状态
+  useEffect(() => {
+    if (user) {
+      console.log('🔄 Loading user status for:', user.uid);
+      setUserStatusLoading(true);
+      
+      // 添加超时处理
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log('⏰ User status request timeout');
+      }, 10000); // 10秒超时
+      
+      fetch(`/api/user/status?uid=${user.uid}`, {
+        signal: controller.signal
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📊 User status response:', data);
+          if (data.error) {
+            console.error('❌ Error fetching user status:', data.error);
+            // 即使有错误，也设置一个默认状态，以免按钮一直被禁用
+            setUserStatus({
+              trialUsed: false,
+              isUpgraded: false,
+              planType: null,
+              scanLimit: null,
+              scansUsed: 0,
+              lastScanMonth: new Date().toISOString().slice(0, 7)
+            });
+          } else {
+            setUserStatus(data);
+          }
+        })
+        .catch((error) => {
+          if (error.name === 'AbortError') {
+            console.error('❌ User status request was aborted (timeout)');
+          } else {
+            console.error('❌ Failed to fetch user status:', error);
+          }
+          // 设置默认状态，确保按钮不会被永久禁用
+          setUserStatus({
+            trialUsed: false,
+            isUpgraded: false,
+            planType: null,
+            scanLimit: null,
+            scansUsed: 0,
+            lastScanMonth: new Date().toISOString().slice(0, 7)
+          });
+        })
+        .finally(() => {
+          clearTimeout(timeoutId);
+          console.log('✅ User status loading completed');
+          setUserStatusLoading(false);
+        });
+    } else {
+      console.log('👤 No user, clearing status');
+      setUserStatus(null);
+      setUserStatusLoading(false);
+    }
+  }, [user]);
+
+  // 检查用户是否可以生成分析
+  const canGenerate = () => {
+    if (!user) {
+      // 匿名用户：检查本地试用状态
+      return !anonymousTrialUsed;
+    }
+    
+    if (!userStatus) {
+      return true; // 状态未加载完成时，允许尝试生成
+    }
+    
+    // 登录用户：检查试用和订阅状态
+    if (!userStatus.trialUsed) {
+      return true; // 试用可用
+    }
+    
+    if (userStatus.isUpgraded) {
+      if (userStatus.scanLimit === null) {
+        return true; // 无限制
+      }
+      return userStatus.scansUsed < userStatus.scanLimit; // 检查剩余次数
+    }
+    
+    return false; // 试用已用且未升级
+  };
+
+  // 获取错误信息
+  const getErrorMessage = () => {
+    if (!user) {
+      if (anonymousTrialUsed) {
+        return 'Your free trial is finished. Please sign in and upgrade to continue using MatchWise!';
+      }
+      return '';
+    }
+    
+    if (!userStatus) {
+      return 'Loading user status...';
+    }
+    
+    if (userStatus.trialUsed && !userStatus.isUpgraded) {
+      return 'Your free trial is finished. Please upgrade to continue using MatchWise!';
+    }
+    
+    if (userStatus.isUpgraded && userStatus.scanLimit !== null && userStatus.scansUsed >= userStatus.scanLimit) {
+      return 'You have reached your monthly scan limit. Please upgrade your plan or wait for next month.';
+    }
+    
+    return '';
+  };
+
+  // 检查是否应该显示升级提示（只在用户尝试生成后显示）
+  const shouldShowUpgradePrompt = () => {
+    // 只有在有错误信息且包含"upgrade"关键词时才显示
+    const errorMsg = getErrorMessage();
+    return errorMsg.includes('upgrade') || errorMsg.includes('limit');
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -55,7 +218,7 @@ export default function Home() {
     inputRef.current?.click();
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!jobText || !resumeFile) {
@@ -63,9 +226,23 @@ export default function Home() {
       return;
     }
 
+    // 清除之前的错误信息
+    setError('');
+
+    // 检查是否可以生成
+    if (!canGenerate()) {
+      const errorMsg = getErrorMessage();
+      setResponse(null);
+      setError(errorMsg);
+      return; // 只显示错误消息，不自动弹出支付窗口
+    }
+
     const formData = new FormData();
-    formData.append('job_text', jobText); // 改为 job_text
+    formData.append('job_text', jobText);
     formData.append('resume', resumeFile);
+    if (user) {
+      formData.append('uid', user.uid);
+    }
 
     setLoading(true);
     setError('');
@@ -77,12 +254,44 @@ export default function Home() {
         method: 'POST',
         body: formData,
       });
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch comparison');
       }
+      
       const data = await response.json();
       setResponse(data);
+
+      // 更新状态
+      if (!user) {
+        // 匿名用户：标记试用已使用
+        localStorage.setItem('anonymousTrialUsed', 'true');
+        setAnonymousTrialUsed(true);
+        console.log('✅ Anonymous user trial marked as used');
+      } else {
+        // 登录用户：标记试用已使用并刷新状态
+        try {
+          // 首先标记试用已使用
+          const trialResponse = await fetch(`/api/user/use-trial?uid=${user.uid}`, { 
+            method: "POST" 
+          });
+          if (trialResponse.ok) {
+            console.log('✅ Logged-in user trial marked as used');
+          }
+          
+          // 然后刷新用户状态
+          const statusResponse = await fetch(`/api/user/status?uid=${user.uid}`);
+          const statusData = await statusResponse.json();
+          if (!statusData.error) {
+            setUserStatus(statusData);
+            console.log('✅ User status refreshed:', statusData);
+          }
+        } catch (error) {
+          console.error('❌ Error updating trial status:', error);
+        }
+      }
+
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       if (errorMessage.includes('xAI API error: 403')) {
@@ -97,7 +306,102 @@ export default function Home() {
     }
   };
 
+  function handleGoogleLogin() {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        // 登录成功，user 会自动更新
+      })
+      .catch((error) => {
+        alert("login failed: " + error.message);
+      });
+  }
+  
+  function handleLogout() {
+    signOut(auth);
+  }
+
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
+  async function handleUpgradeOneTime() {
+    if (!user) {
+      alert('Please sign in before upgrading.');
+      return;
+    }
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://resume-matcher-backend-rrrw.onrender.com';
+    const res = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ uid: user.uid, price_id: 'price_1RnBbcE6OOEHr6Zo6igE1U8B', mode: 'payment' })
+    });
+    const data = await res.json();
+    if (data.checkout_url) {
+      window.open(data.checkout_url, '_blank');
+    } else {
+      alert('Failed to create checkout session');
+    }
+  }
+
+  async function handleUpgradeSubscription_6() {
+    if (!user) {
+      alert('Please sign in before upgrading.');
+      return;
+    }
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://resume-matcher-backend-rrrw.onrender.com';
+    const res = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ uid: user.uid, price_id: 'price_1RnBehE6OOEHr6Zo4QLLJZTg', mode: 'payment' })
+    });
+    const data = await res.json();
+    if (data.checkout_url) {
+      window.open(data.checkout_url, '_blank');
+    } else {
+      alert('Failed to create checkout session');
+    }
+  }
+
+  async function handleUpgradeSubscription_15() {
+    if (!user) {
+      alert('Please sign in before upgrading.');
+      return;
+    }
+    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://resume-matcher-backend-rrrw.onrender.com';
+    const res = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ uid: user.uid, price_id: 'price_1RnBgPE6OOEHr6Zo9EFmgyA5', mode: 'subscription' })
+    });
+    const data = await res.json();
+    if (data.checkout_url) {
+      window.open(data.checkout_url, '_blank');
+    } else {
+      alert('Failed to create checkout session');
+    }
+  }
+
+
   return (
+    <div>
+      {!user ? (
+        <button
+          onClick={handleGoogleLogin}
+          className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+        >
+          Sign in with Google
+        </button>
+      ) : (
+        <div className="mb-4 flex items-center gap-4">
+          <span>Welcome, {user.displayName || user.email}</span>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 bg-gray-400 hover:bg-gray-600 text-white rounded"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+
     <div
       className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-4 relative"
       style={{
@@ -108,9 +412,9 @@ export default function Home() {
     >
       <div className="absolute inset-0 bg-white" style={{ opacity: 0.7 }} aria-hidden="true"></div>
       
-      {/* Visitor Counter - Updated */}
+        {/* Visitor Counter */}
       <div className="absolute top-4 right-4 z-20">
-        <SimpleVisitorCounter />
+          <VisitorCounter />
       </div>
       
       {/* Admin Link */}
@@ -139,16 +443,16 @@ export default function Home() {
           onSubmit={handleSubmit}
         >
           <div>
-            <label htmlFor="jobText" className="block text-sm font-semibold font-medium text-gray-700 mb-1">
-              Job Description
+              <label htmlFor="jobText" className="block text-sm font-semibold font-medium text-gray-700 mb-1">
+                Job Description
             </label>
-            <textarea
-              id="jobText"
+              <textarea
+                id="jobText"
               required
-              value={jobText}
-              onChange={(e) => setJobText(e.target.value)}
-              placeholder="Please paste the full job description here"
-              rows={8}
+                value={jobText}
+                onChange={(e) => setJobText(e.target.value)}
+                placeholder="Please paste the full job description here"
+                rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
@@ -177,19 +481,60 @@ export default function Home() {
               {resumeFile && <span className="text-green-600 text-sm mt-2">{resumeFile.name}</span>}
             </div>
           </div>
+
           {error && <div className="text-red-500 text-sm">{error}</div>}
           {loading && <div className="text-blue-600 text-sm text-center">Processing your request...</div>}
+            
+            {/* Debug info - remove this in production */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                Debug: loading={loading.toString()}, user={user ? 'yes' : 'no'}, 
+                userStatusLoading={userStatusLoading.toString()}, 
+                canGenerate={canGenerate().toString()}
+              </div>
+            )}
+            
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (user && userStatusLoading)}
             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Generating...' : 'Generate Comparison'}
+            {loading ? 'Generating...' : userStatusLoading ? 'Loading...' : 'Generate Comparison'}
           </button>
         </form>
 
+          {/* Show remaining usage for upgraded users */}
+          {user && userStatus && userStatus.isUpgraded && userStatus.scanLimit !== null && !userStatusLoading && (
+            <div className="mb-2 text-center text-blue-700 font-semibold">
+              Remaining this month: {Math.max(userStatus.scanLimit - userStatus.scansUsed, 0)} times
+            </div>
+          )}
+
+          {/* Show upgrade prompts only when there's an error */}
+          {error && shouldShowUpgradePrompt() && (
+            <div className="mb-4 text-center">
+              <div className="text-red-600 font-semibold mb-2">
+                {error}
+              </div>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    // 如果用户未登录，先提示登录
+                    alert('Please sign in before upgrading.');
+                    return;
+                  }
+                  setShowUpgradeModal(true);
+                }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition"
+              >
+                {!user ? 'Sign in & Upgrade' : 'Upgrade to continue using MatchWise'}
+              </button>
+            </div>
+          )}
+
+          {/* Show analysis results */}
         {response && (
-          <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 mt-8 border border-blue-100 flex flex-col gap-8 animate-fade-in">
+            <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-8 mt-8 border border-blue-100 flex flex-col gap-8 animate-fade-in">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Analysis Results</h2>
 
             {/* Job Requirement Summary */}
@@ -198,9 +543,9 @@ export default function Home() {
                 <div className="w-1.5 h-7 bg-blue-500 rounded mr-3"></div>
                 <span className="text-lg font-semibold text-gray-800">Job Requirement Summary</span>
               </div>
-              <div className="ml-5"
-                dangerouslySetInnerHTML={{ __html: response.job_summary || 'No job summary available.' }}
-              />
+                <div className="ml-5"
+                  dangerouslySetInnerHTML={{ __html: response.job_summary || 'No job summary available.' }}
+                />
             </div>
 
             {/* Resume - Job Posting Comparison */}
@@ -210,9 +555,9 @@ export default function Home() {
                 <span className="text-lg font-semibold text-gray-800">Resume - Job Posting Comparison</span>
               </div>
               <div className="ml-5">
-                   <div className="resume-table-html"
-                     dangerouslySetInnerHTML={{ __html: response.resume_summary }}
-                   />
+                     <div className="resume-table-html"
+                       dangerouslySetInnerHTML={{ __html: response.resume_summary }}
+                     />
               </div>
             </div>
 
@@ -239,9 +584,9 @@ export default function Home() {
                 <div className="w-1.5 h-7 bg-purple-500 rounded mr-3"></div>
                 <span className="text-lg font-semibold text-gray-800">Tailored Resume Summary</span>
               </div>
-              <div className="ml-5"
-                dangerouslySetInnerHTML={{ __html: response.tailored_resume_summary || 'No tailored resume summary available.' }}
-              />
+                <div className="ml-5"
+                  dangerouslySetInnerHTML={{ __html: response.tailored_resume_summary || 'No tailored resume summary available.' }}
+                />
             </div>
 
             {/* Tailored Resume Work Experience */}
@@ -250,9 +595,9 @@ export default function Home() {
                 <div className="w-1.5 h-7 bg-orange-500 rounded mr-3"></div>
                 <span className="text-lg font-semibold text-gray-800">Tailored Resume Work Experience</span>
               </div>
-              <div className="ml-5"
-                dangerouslySetInnerHTML={{ __html: response.tailored_work_experience || '<ul><li>No tailored work experience provided.</li></ul>' }}
-              />
+                <div className="ml-5"
+                  dangerouslySetInnerHTML={{ __html: response.tailored_work_experience || '<ul><li>No tailored work experience provided.</li></ul>' }}
+                />
             </div>
 
             {/* Cover Letter */}
@@ -261,9 +606,9 @@ export default function Home() {
                 <div className="w-1.5 h-7 bg-teal-500 rounded mr-3"></div>
                 <span className="text-lg font-semibold text-gray-800">Cover Letter</span>
               </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 ml-5"
-                dangerouslySetInnerHTML={{ __html: response.cover_letter || 'No cover letter available.' }}
-              />
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 ml-5"
+                  dangerouslySetInnerHTML={{ __html: response.cover_letter || 'No cover letter available.' }}
+                />
             </div>
           </div>
         )}
@@ -272,6 +617,65 @@ export default function Home() {
           © {new Date().getFullYear()} MatchWise. All rights reserved.
         </footer>
       </div>
+      </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
+          <div className="relative bg-white/50 rounded-2xl shadow-2xl p-8 max-w-md w-full flex flex-col items-center"
+            style={{
+              backgroundImage: "url('/Job_Search_Pic.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              border: '1px solid #e0e7ef',
+            }}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl font-bold"
+              onClick={() => setShowUpgradeModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">Choose Your Plan</h2>
+            <div className="w-full flex flex-col gap-6">
+              <div className="bg-white/90 rounded-lg shadow p-4 flex flex-col items-center">
+                <div className="text-lg font-semibold text-gray-800 mb-2">Option 1: One-time Generation</div>
+                <div className="text-green-600 font-bold text-xl mb-2">$2</div>
+                <div className="text-gray-600 text-sm mb-4">Pay $2 for a single resume analysis</div>
+                <button
+                  onClick={handleUpgradeOneTime}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+                >
+                  Pay $2
+                </button>
+              </div>
+              <div className="bg-white/90 rounded-lg shadow p-4 flex flex-col items-center">
+                <div className="text-lg font-semibold text-gray-800 mb-2">Option 2: Subscription_6</div>
+                <div className="text-green-600 font-bold text-xl mb-2">$6/month</div>
+                <div className="text-gray-600 text-sm mb-4">Subscribe for up to 30 scans per month</div>
+                <button
+                  onClick={handleUpgradeSubscription_6}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow transition"
+                >
+                  Subscribe $6/month
+                </button>
+              </div>
+              <div className="bg-white/90 rounded-lg shadow p-4 flex flex-col items-center">
+                <div className="text-lg font-semibold text-gray-800 mb-2">Option 3: Subscription_15</div>
+                <div className="text-green-600 font-bold text-xl mb-2">$15/month</div>
+                <div className="text-gray-600 text-sm mb-4">Subscribe for up to 180 scans per month</div>
+                <button
+                  onClick={handleUpgradeSubscription_15}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow transition"
+                >
+                  Subscribe $15/month
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
