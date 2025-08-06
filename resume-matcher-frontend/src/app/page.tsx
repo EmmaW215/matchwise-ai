@@ -496,7 +496,7 @@ export default function Home() {
             
           <button
             type="submit"
-            disabled={loading || (user && userStatusLoading)}
+            disabled={loading || Boolean(user && userStatusLoading)}
             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? 'Generating...' : userStatusLoading ? 'Loading...' : 'Generate Comparison'}
