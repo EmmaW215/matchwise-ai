@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../../firebase';
 
 interface MessageHandler {
