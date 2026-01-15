@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // 允许开发环境的跨域请求
+  allowedDevOrigins: [
+    '192.168.86.46',
+    'localhost',
+    '127.0.0.1',
+  ],
 };
 
 export default nextConfig;
