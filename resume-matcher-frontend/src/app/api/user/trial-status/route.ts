@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const uid = searchParams.get('uid');
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://resume-matcher-backend-rrrw.onrender.com';
 
   if (!uid) {
     return NextResponse.json({ error: 'Missing uid' }, { status: 400 });
