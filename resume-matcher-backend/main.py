@@ -158,6 +158,7 @@ async def can_generate(uid: str = Query(...)):
 # CORS configuration - support multiple domains
 allowed_origins = [
     "https://matchwise-ai.vercel.app",
+    "https://matchwise-ai2026.vercel.app",  # New Vercel project
     "http://localhost:3000",  # For local development
     "http://localhost:3001",  # Alternative local port
     "http://127.0.0.1:3000",
