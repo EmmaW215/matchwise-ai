@@ -42,7 +42,7 @@ MatchWise AI is a complete, production-ready AI-powered resume matching platform
 ## 🌐 Live Deployment
 
 ### Frontend (Vercel)
-- **Primary URL**: https://resume-update-frontend.vercel.app/
+- **Primary URL**: https://matchwise-ai.vercel.app/
 - **Status**: ✅ Active and Public
 - **Performance**: Excellent (CDN + Edge Network)
 - **SSL**: ✅ Secure HTTPS
@@ -121,7 +121,7 @@ NEXT_PUBLIC_API_URL=https://resume-matcher-backend-rrrw.onrender.com
 ```env
 OPENAI_API_KEY=your_openai_api_key
 XAI_API_KEY=your_xai_api_key
-ALLOWED_ORIGINS=https://resume-update-frontend.vercel.app
+ALLOWED_ORIGINS=https://matchwise-ai.vercel.app
 ```
 
 ## 🚀 Future Enhancements

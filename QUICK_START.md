@@ -5,7 +5,7 @@
 ### Option 1: Use Live Deployment (Recommended)
 **No setup required!** Your application is already live and ready to use:
 
-🌐 **Visit**: https://resume-update-frontend.vercel.app/
+🌐 **Visit**: https://matchwise-ai.vercel.app/
 
 ### Option 2: Local Development
 
@@ -78,7 +78,7 @@ cd MatchWise_AI_Backup_20250704_225809
 - Responsive Design
 
 ### 🌐 Live URLs
-- **Frontend**: https://resume-update-frontend.vercel.app/
+- **Frontend**: https://matchwise-ai.vercel.app/
 - **Backend**: https://resume-matcher-backend-rrrw.onrender.com/
 - **Health Check**: https://resume-matcher-backend-rrrw.onrender.com/health
 

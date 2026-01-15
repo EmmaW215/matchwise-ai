@@ -93,7 +93,7 @@ python real_ai_test.py
 ```
 
 ### **方法2：使用你的MatchWise系统**
-1. 访问你的前端：https://resume-update-frontend.vercel.app/
+1. 访问你的前端：https://matchwise-ai.vercel.app/
 2. 上传简历和职位链接
 3. 系统会自动选择可用的AI服务
 4. 观察不同AI服务的输出质量
@@ -165,7 +165,7 @@ python real_ai_test.py
 ## 🚀 **立即测试**
 
 ### **选项1：使用你的在线系统**
-访问 https://resume-update-frontend.vercel.app/ 并测试实际功能
+访问 https://matchwise-ai.vercel.app/ 并测试实际功能
 
 ### **选项2：本地测试**
 ```bash

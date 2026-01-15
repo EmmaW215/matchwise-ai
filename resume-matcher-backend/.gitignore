@@ -1,2 +1,7 @@
 .vercel
 venv/
+
+serviceAccountKey.json
+
+.env
+replacements.txt

@@ -47,7 +47,7 @@ python test_comparison_table.py
 
 ## 🚀 **Web UI显示**
 
-当用户访问 https://resume-update-frontend.vercel.app/ 并上传简历和职位链接时：
+当用户访问 https://matchwise-ai.vercel.app/ 并上传简历和职位链接时：
 
 1. **AI服务可用**: 显示真实的AI分析结果
 2. **AI服务不可用**: 显示上述格式的本地模拟AI输出

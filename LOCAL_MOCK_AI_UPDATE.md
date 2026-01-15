@@ -48,7 +48,7 @@ Strong leadership, organizational and communication skills
 ## 🚀 **如何测试**
 
 ### 方法1：使用Web UI
-1. 访问 https://resume-update-frontend.vercel.app/
+1. 访问 https://matchwise-ai.vercel.app/
 2. 上传简历和职位链接
 3. 如果AI服务不可用，会显示新的本地模拟AI输出
 

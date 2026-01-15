@@ -9,3 +9,7 @@ PyPDF2
 aiohttp
 beautifulsoup4
 requests
+stripe
+firebase-admin==6.9.0
+firebase-admin
+stripe

@@ -96,7 +96,7 @@ tar -xzf v1.0.3_MatchWise_AI_Backup_20250705_003721.tar.gz
 - 系统可靠性得到保障
 
 ### 🌐 **在线访问**
-- **前端**: https://resume-update-frontend.vercel.app/
+- **前端**: https://matchwise-ai.vercel.app/
 - **后端**: Render托管服务
 - **功能**: 完全可用，支持Markdown表格显示
 

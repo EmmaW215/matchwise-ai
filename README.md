@@ -115,8 +115,8 @@ ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app
 ## 🌐 Live Deployment
 
 ### Frontend URLs
-- **Primary**: https://resume-update-frontend.vercel.app/
-- **Alternative**: https://resume-matcher-frontend.vercel.app/
+- **Primary**: https://matchwise-ai.vercel.app/
+- **Alternative**: https://matchwise-ai.vercel.app/
 - **Main**: https://matchwise-ai.vercel.app/
 
 ### Backend API

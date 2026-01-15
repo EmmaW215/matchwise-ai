@@ -33,7 +33,7 @@ cat > "$BACKUP_DIR/DEPLOYMENT_INFO.md" << EOF
 ## Backup Created: $(date)
 
 ## Live URLs
-- Frontend: https://resume-update-frontend.vercel.app/
+- Frontend: https://matchwise-ai.vercel.app/
 - Backend: https://resume-matcher-backend-rrrw.onrender.com/
 
 ## Environment Variables Required
@@ -44,7 +44,7 @@ NEXT_PUBLIC_API_URL=https://resume-matcher-backend-rrrw.onrender.com
 ### Backend (Render)
 OPENAI_API_KEY=your_openai_api_key
 XAI_API_KEY=your_xai_api_key
-ALLOWED_ORIGINS=https://resume-update-frontend.vercel.app
+ALLOWED_ORIGINS=https://matchwise-ai.vercel.app
 
 ## Quick Start Commands
 
