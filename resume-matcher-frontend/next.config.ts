@@ -17,7 +17,9 @@ const nextConfig: NextConfig = {
             // 'self' - 允许同源嵌入
             // https://smartsuccess-ai.vercel.app - SmartSuccess.AI Vercel 部署
             // https://*.vercel.app - 所有 Vercel 子域名（包括预览部署）
-            value: "frame-ancestors 'self' https://smartsuccess-ai.vercel.app https://*.vercel.app;",
+            // http://localhost:* - 允许本地开发环境（所有端口）
+            // http://127.0.0.1:* - 允许本地开发环境（IP 地址，所有端口）
+            value: "frame-ancestors 'self' https://smartsuccess-ai.vercel.app https://*.vercel.app http://localhost:* http://127.0.0.1:*;",
           },
         ],
       },
