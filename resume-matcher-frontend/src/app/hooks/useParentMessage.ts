@@ -10,7 +10,7 @@ interface MessageHandler {
 export function useParentMessage(handlers: MessageHandler) {
   useEffect(() => {
     const allowedOrigins = [
-      'https://smartsuccess-ai.vercel.app',
+      'https://smart-success-ai.vercel.app',
       'http://localhost:3000',
     ];
 
