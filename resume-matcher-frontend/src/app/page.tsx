@@ -432,9 +432,17 @@ export default function Home() {
     >
       <div className="absolute inset-0 bg-white" style={{ opacity: 0.7 }} aria-hidden="true"></div>
       
-        {/* Visitor Counter */}
-      <div className="absolute top-4 right-4 z-20">
-          <VisitorCounter isVisible={showVisitorCounter} />
+        {/* SmartSuccess.AI Button and Visitor Counter */}
+      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
+        <a
+          href="https://smartsuccess-ai.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+        >
+          SmartSuccess.AI
+        </a>
+        <VisitorCounter isVisible={showVisitorCounter} />
       </div>
       
       {/* Admin Link */}
