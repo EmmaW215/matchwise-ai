@@ -403,24 +403,37 @@ export default function Home() {
 
   return (
     <div>
-      {!user ? (
-        <button
-          onClick={handleGoogleLogin}
-          className="mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
-        >
-          Sign in with Google
-        </button>
-      ) : (
-        <div className="mb-4 flex items-center gap-4">
-          <span>Welcome, {user.displayName || user.email}</span>
-          <button
-            onClick={handleLogout}
-            className="px-3 py-1 bg-gray-400 hover:bg-gray-600 text-white rounded"
-          >
-            Sign out
-          </button>
+      {/* Top Header Bar - Outside Background Picture Range */}
+      <div className="flex justify-between items-center p-4 mb-4">
+        <div>
+          {!user ? (
+            <button
+              onClick={handleGoogleLogin}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+            >
+              Sign in with Google
+            </button>
+          ) : (
+            <div className="flex items-center gap-4">
+              <span>Welcome, {user.displayName || user.email}</span>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1 bg-gray-400 hover:bg-gray-600 text-white rounded"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
-      )}
+        <a
+          href="https://smartsuccess-ai.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
+        >
+          SmartSuccess.AI
+        </a>
+      </div>
 
     <div
       className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 p-4 relative"
@@ -432,16 +445,8 @@ export default function Home() {
     >
       <div className="absolute inset-0 bg-white" style={{ opacity: 0.7 }} aria-hidden="true"></div>
       
-        {/* SmartSuccess.AI Button and Visitor Counter */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2">
-        <a
-          href="https://smartsuccess-ai.vercel.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
-        >
-          SmartSuccess.AI
-        </a>
+        {/* Visitor Counter */}
+      <div className="absolute top-4 right-4 z-20">
         <VisitorCounter isVisible={showVisitorCounter} />
       </div>
       
