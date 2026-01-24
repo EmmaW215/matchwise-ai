@@ -392,7 +392,7 @@ export default function Home() {
           )}
         </div>
         <a
-          href="https://smart-success-ai.vercel.app"
+          href="https://smart-sccuss-career-intelligence-ai.vercel.app"
           target="_blank"
           rel="noopener noreferrer"
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition"
