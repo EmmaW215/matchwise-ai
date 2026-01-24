@@ -139,17 +139,17 @@ export default function Home() {
     },
   });
 
-  // 检查用户是否可以生成分析（0 次免费试用：须先登录并付费）
+  // 检查用户是否可以生成分析（不要求登录；登录用户须已付费）
   const canGenerate = () => {
     if (!user) {
-      return false; // 匿名用户不可用，须先登录并升级
+      return true; // 匿名用户可直接使用
     }
     
     if (!userStatus) {
       return false; // 状态未加载完成时，禁用按钮
     }
     
-    // 仅已升级用户可使用
+    // 登录用户：仅已升级可使用
     if (!userStatus.isUpgraded) {
       return false;
     }
@@ -163,7 +163,7 @@ export default function Home() {
   // 获取错误信息
   const getErrorMessage = () => {
     if (!user) {
-      return 'Please sign in and upgrade to use MatchWise. No free trial.';
+      return '';
     }
     
     if (!userStatus) {

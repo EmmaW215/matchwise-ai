@@ -441,24 +441,20 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
 @app.post("/api/compare")
 async def compare(job_text: str = Form(...), resume: UploadFile = File(...), uid: str = Form(None)):
     try:
-        # 1. 必须登录且已付费（0 次免费试用）
-        if not uid:
-            return JSONResponse(
-                status_code=403,
-                content={"error": "Please sign in and upgrade to use MatchWise. No free trial."},
-            )
-        user_status = UserStatus(uid)
-        can_gen, reason = user_status.can_generate()
-        if not can_gen:
-            error_messages = {
-                "upgrade_required": "Please upgrade to use MatchWise. No free trial.",
-                "subscription_expired": "Your subscription has expired. Please renew to continue.",
-                "subscription_limit_reached": "You have reached your monthly scan limit. Please upgrade your plan or wait for next month.",
-            }
-            return JSONResponse(
-                status_code=403,
-                content={"error": error_messages.get(reason, "Access denied")},
-            )
+        # 1. 登录用户须已付费；匿名用户（无 uid）直接放行
+        if uid:
+            user_status = UserStatus(uid)
+            can_gen, reason = user_status.can_generate()
+            if not can_gen:
+                error_messages = {
+                    "upgrade_required": "Please upgrade to use MatchWise. No free trial.",
+                    "subscription_expired": "Your subscription has expired. Please renew to continue.",
+                    "subscription_limit_reached": "You have reached your monthly scan limit. Please upgrade your plan or wait for next month.",
+                }
+                return JSONResponse(
+                    status_code=403,
+                    content={"error": error_messages.get(reason, "Access denied")},
+                )
 
         # 2. 处理简历文件
         resume_text = ""
@@ -475,11 +471,12 @@ async def compare(job_text: str = Form(...), resume: UploadFile = File(...), uid
         # 3. 调用AI分析
         result = await compare_texts(job_text, resume_text)
         
-        # 4. 更新用户状态（仅已升级用户会执行到这里，增加使用次数）
-        user_status = UserStatus(uid)
-        status = user_status.get_status()
-        if status["isUpgraded"]:
-            user_status.increment_scan_count()
+        # 4. 更新用户状态（仅登录且已升级用户：增加使用次数）
+        if uid:
+            user_status = UserStatus(uid)
+            status = user_status.get_status()
+            if status["isUpgraded"]:
+                user_status.increment_scan_count()
 
         return JSONResponse(content=result)
     except Exception as e:
