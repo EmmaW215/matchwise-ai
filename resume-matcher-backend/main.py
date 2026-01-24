@@ -97,27 +97,22 @@ class UserStatus:
         }
     
     def can_generate(self):
-        """检查用户是否可以生成分析"""
+        """检查用户是否可以生成分析（0 次免费试用：须先付费）"""
         status = self.get_status()
         
-        # 新用户或未使用试用
-        if not status["trialUsed"]:
-            return True, "trial_available"
+        # 未升级用户不可用
+        if not status["isUpgraded"]:
+            return False, "upgrade_required"
         
-        # 已升级用户
-        if status["isUpgraded"]:
-            # 新增订阅有效期判断
-            if "subscriptionActive" in status and not status["subscriptionActive"]:
-                return False, "subscription_expired"
-            if status["scanLimit"] is None:
-                return True, "unlimited"
-            if status["scansUsed"] < status["scanLimit"]:
-                return True, "subscription_available"
-            else:
-                return False, "subscription_limit_reached"
+        # 订阅已过期
+        if "subscriptionActive" in status and not status["subscriptionActive"]:
+            return False, "subscription_expired"
         
-        # 试用已用但未升级
-        return False, "trial_used"
+        if status["scanLimit"] is None:
+            return True, "unlimited"
+        if status["scansUsed"] < status["scanLimit"]:
+            return True, "subscription_available"
+        return False, "subscription_limit_reached"
     
     def mark_trial_used(self):
         """标记试用已使用"""
@@ -446,21 +441,25 @@ async def compare_texts(job_text: str, resume_text: str) -> dict:
 @app.post("/api/compare")
 async def compare(job_text: str = Form(...), resume: UploadFile = File(...), uid: str = Form(None)):
     try:
-        # 1. 检查用户权限
-        if uid:
-            user_status = UserStatus(uid)
-            can_gen, reason = user_status.can_generate()
-            
-            if not can_gen:
-                error_messages = {
-                    "trial_used": "Your free trial is finished. Please upgrade to continue using MatchWise!",
-                    "subscription_limit_reached": "You have reached your monthly scan limit. Please upgrade your plan or wait for next month."
-                }
-                return JSONResponse(
-                    status_code=403, 
-                    content={"error": error_messages.get(reason, "Access denied")}
-                )
-        
+        # 1. 必须登录且已付费（0 次免费试用）
+        if not uid:
+            return JSONResponse(
+                status_code=403,
+                content={"error": "Please sign in and upgrade to use MatchWise. No free trial."},
+            )
+        user_status = UserStatus(uid)
+        can_gen, reason = user_status.can_generate()
+        if not can_gen:
+            error_messages = {
+                "upgrade_required": "Please upgrade to use MatchWise. No free trial.",
+                "subscription_expired": "Your subscription has expired. Please renew to continue.",
+                "subscription_limit_reached": "You have reached your monthly scan limit. Please upgrade your plan or wait for next month.",
+            }
+            return JSONResponse(
+                status_code=403,
+                content={"error": error_messages.get(reason, "Access denied")},
+            )
+
         # 2. 处理简历文件
         resume_text = ""
         if resume.filename and resume.filename.endswith(".pdf"):
@@ -476,19 +475,12 @@ async def compare(job_text: str = Form(...), resume: UploadFile = File(...), uid
         # 3. 调用AI分析
         result = await compare_texts(job_text, resume_text)
         
-        # 4. 更新用户状态
-        if uid:
-            user_status = UserStatus(uid)
-            status = user_status.get_status()
-            
-            # 如果是试用用户，标记试用已使用
-            if not status["trialUsed"]:
-                user_status.mark_trial_used()
-            
-            # 如果是订阅用户，增加使用次数
-            if status["isUpgraded"]:
-                user_status.increment_scan_count()
-        
+        # 4. 更新用户状态（仅已升级用户会执行到这里，增加使用次数）
+        user_status = UserStatus(uid)
+        status = user_status.get_status()
+        if status["isUpgraded"]:
+            user_status.increment_scan_count()
+
         return JSONResponse(content=result)
     except Exception as e:
         return JSONResponse(

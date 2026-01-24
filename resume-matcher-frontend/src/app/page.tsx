@@ -43,23 +43,12 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
   
-  // 匿名用户试用状态（仅用于未登录用户）
-  const [anonymousTrialUsed, setAnonymousTrialUsed] = useState(false);
-
   // SmartSuccess.AI 集成相关状态
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
   const [showVisitorCounter, setShowVisitorCounter] = useState(true);
 
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // 初始化时检查匿名用户试用状态
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const trialUsed = localStorage.getItem('anonymousTrialUsed') === 'true';
-      setAnonymousTrialUsed(trialUsed);
-    }
-  }, []);
 
   // 监听用户登录状态
   useEffect(() => {
@@ -150,50 +139,42 @@ export default function Home() {
     },
   });
 
-  // 检查用户是否可以生成分析
+  // 检查用户是否可以生成分析（0 次免费试用：须先登录并付费）
   const canGenerate = () => {
     if (!user) {
-      // 匿名用户：检查本地试用状态
-      return !anonymousTrialUsed;
+      return false; // 匿名用户不可用，须先登录并升级
     }
     
     if (!userStatus) {
-      return true; // 状态未加载完成时，允许尝试生成
+      return false; // 状态未加载完成时，禁用按钮
     }
     
-    // 登录用户：检查试用和订阅状态
-    if (!userStatus.trialUsed) {
-      return true; // 试用可用
+    // 仅已升级用户可使用
+    if (!userStatus.isUpgraded) {
+      return false;
     }
     
-    if (userStatus.isUpgraded) {
-      if (userStatus.scanLimit === null) {
-        return true; // 无限制
-      }
-      return userStatus.scansUsed < userStatus.scanLimit; // 检查剩余次数
+    if (userStatus.scanLimit === null) {
+      return true; // 无限制
     }
-    
-    return false; // 试用已用且未升级
+    return userStatus.scansUsed < userStatus.scanLimit; // 检查剩余次数
   };
 
   // 获取错误信息
   const getErrorMessage = () => {
     if (!user) {
-      if (anonymousTrialUsed) {
-        return 'Your free trial is finished. Please sign in and upgrade to continue using MatchWise!';
-      }
-      return '';
+      return 'Please sign in and upgrade to use MatchWise. No free trial.';
     }
     
     if (!userStatus) {
       return 'Loading user status...';
     }
     
-    if (userStatus.trialUsed && !userStatus.isUpgraded) {
-      return 'Your free trial is finished. Please upgrade to continue using MatchWise!';
+    if (!userStatus.isUpgraded) {
+      return 'Please upgrade to use MatchWise. No free trial.';
     }
     
-    if (userStatus.isUpgraded && userStatus.scanLimit !== null && userStatus.scansUsed >= userStatus.scanLimit) {
+    if (userStatus.scanLimit !== null && userStatus.scansUsed >= userStatus.scanLimit) {
       return 'You have reached your monthly scan limit. Please upgrade your plan or wait for next month.';
     }
     
@@ -283,24 +264,9 @@ export default function Home() {
       const data = await response.json();
       setResponse(data);
 
-      // 更新状态
-      if (!user) {
-        // 匿名用户：标记试用已使用
-        localStorage.setItem('anonymousTrialUsed', 'true');
-        setAnonymousTrialUsed(true);
-        console.log('✅ Anonymous user trial marked as used');
-      } else {
-        // 登录用户：标记试用已使用并刷新状态
+      // 刷新用户状态（仅登录且已升级用户会走到这里，用于更新 scansUsed）
+      if (user) {
         try {
-          // 首先标记试用已使用
-          const trialResponse = await fetch(`/api/user/use-trial?uid=${user.uid}`, { 
-            method: "POST" 
-          });
-          if (trialResponse.ok) {
-            console.log('✅ Logged-in user trial marked as used');
-          }
-          
-          // 然后刷新用户状态
           const statusResponse = await fetch(`/api/user/status?uid=${user.uid}`);
           const statusData = await statusResponse.json();
           if (!statusData.error) {
@@ -308,7 +274,7 @@ export default function Home() {
             console.log('✅ User status refreshed:', statusData);
           }
         } catch (error) {
-          console.error('❌ Error updating trial status:', error);
+          console.error('❌ Error refreshing user status:', error);
         }
       }
 
@@ -529,10 +495,10 @@ export default function Home() {
             
           <button
             type="submit"
-            disabled={loading || Boolean(user && userStatusLoading)}
+            disabled={loading || !canGenerate()}
             className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? 'Generating...' : userStatusLoading ? 'Loading...' : 'Generate Comparison'}
+            {loading ? 'Generating...' : user && userStatusLoading ? 'Loading...' : 'Generate Comparison'}
           </button>
         </form>
 
