@@ -215,6 +215,18 @@ For support and questions:
 - Render for backend hosting
 - Next.js and FastAPI communities
 
+
+
+<img width="1522" height="1116" alt="image" src="https://github.com/user-attachments/assets/c6cf9ead-e219-49bd-8f8e-dd6898ff3c14" />
+<img width="1522" height="1116" alt="image" src="https://github.com/user-attachments/assets/5bfc6226-ac23-4e56-a330-ed21ff588384" />
+<img width="1522" height="1116" alt="image" src="https://github.com/user-attachments/assets/e1554b1f-187b-4beb-95f3-3e11dfa87305" />
+<img width="1522" height="1116" alt="image" src="https://github.com/user-attachments/assets/c31c3f42-1674-4146-bd18-20e2dcb0daa5" />
+<img width="1522" height="1116" alt="image" src="https://github.com/user-attachments/assets/4b3e0c57-62a5-4923-ae99-01503e08ab15" />
+
+
+
+
+
 ---
 
 **MatchWise AI** - Making job applications smarter with AI-powered resume optimization. 
